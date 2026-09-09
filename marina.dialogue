@@ -7,7 +7,32 @@ Marina: Tapi tanganmu... telah memulihkan keajaiban yang sudah lama hilang.
 Marina: Ini baru permulaan. Laut lepas masih sekarat dan menantimu.
 Marina: Setiap sampah yang kau pungut di dasar laut akan kau pilah ke tempatnya yang benar.
 Marina: Mari bersama membersihkan samudra ini, sedikit demi sedikit. Selami horizon selanjutnya.
+- Aku siap belajar! Ambilkan aku tugas pertama. => quest_accepted
+- Terima kasih, aku mau eksplorasi dulu. => END
+
+~ quest_accepted
 do GameManager.set_marina_met()
+do GameManager.start_marina_quest()
+Marina: Bagus! Semangat yang membara.
+Marina: Tugas pertamamu: kumpulkan {{GameManager.marina_quest_target}} sampah dari laut.
+Marina: Setelah terkumpul, pulang ke permukaan dan pilah ke Tempat Sampah yang benar.
+Marina: Kau harus berhasil menyortir {{GameManager.marina_quest_sort_target}} dari {{GameManager.marina_quest_target}} sampah dengan benar.
+Marina: Ayo menyelam. Laut menantimu.
+=> END
+
+~ quest_progress
+Marina: Sudah berapa yang kau kumpulkan?
+Marina: {{GameManager.get_marina_quest_progress()}}
+Marina: Jangan menyerah, setiap sampah yang kau pungut adalah nafas baru bagi laut.
+Marina: Teruslah menyelam dan sortir dengan benar.
+=> END
+
+~ quest_done
+Marina: Luar biasa! Kau sudah menguasai dasar-dasar pemilahan sampah laut.
+Marina: Sekarang kau bebas menjelajahi seluruh samudra.
+Marina: Ada 4 zona yang menanti: Beach, Coral Reef, Open Ocean, dan Deep Sea.
+Marina: Bersihkan setiap zona hingga 100% untuk membuka zona berikutnya.
+Marina: Jangan ragu kembali padaku jika butuh bimbingan.
 => END
 
 ~ coral_first
@@ -20,5 +45,5 @@ Marina: Lalu kita akan bicara lebih jauh, sahabat laut.
 ~ meet_again
 Marina: Senang melihatmu kembali, sahabat laut.
 Marina: Ombak masih membisikkan nama kita, meminta keselamatan.
-Marina: Setiap tetes usaha kita mengubah lautan, selami terus dan jangan berhenti.
+Marina: Setiap tetes usaha kita mengubah lautan, selalami terus dan jangan berhenti.
 => END

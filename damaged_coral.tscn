@@ -1,20 +1,20 @@
-[gd_scene load_steps=5 format=3 uid="uid://byfa1ogvlholl"]
+[gd_scene format=3 uid="uid://byfa1ogvlholl"]
 
-[ext_resource type="Texture2D" uid="uid://dmp4o8j5g7kum" path="res://Gemini_Generated_Image_o5yrv9o5yrv9o5yr-removebg-preview.png" id="1_0fsfx"]
+[ext_resource type="Texture2D" uid="uid://dmp4o8j5g7kum" path="res://Coral.png" id="1_0fsfx"]
 [ext_resource type="Script" uid="uid://5ero67gbm4na" path="res://coral_repair.gd" id="3_7lulf"]
 [ext_resource type="PackedScene" uid="uid://bvntidg4ll1ku" path="res://coral_afterrepair.tscn" id="4_qcfbd"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_t3whr"]
 size = Vector2(48, 36)
 
-[node name="damaged_coral" type="Area2D"]
+[node name="damaged_coral" type="Area2D" unique_id=1193181871]
 script = ExtResource("3_7lulf")
 repaired_scene = ExtResource("4_qcfbd")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=619184569]
 position = Vector2(-9.53674e-07, -1.90735e-06)
 scale = Vector2(0.11425, 0.09725)
 texture = ExtResource("1_0fsfx")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=655425870]
 shape = SubResource("RectangleShape2D_t3whr")

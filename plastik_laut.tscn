@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://bgsp4us6g56lx"]
+
+[ext_resource type="Script" path="res://plastik_laut.gd" id="2_plastik"]
+[ext_resource type="Texture2D" uid="uid://ddhhcs3udpx5x" path="res://plastik laut.png" id="1_achqb"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wp5od"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_achqb")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wp5od"]
+size = Vector2(128, 128)
+
+[node name="Plastik Laut" type="AnimatedSprite2D" unique_id=2104447766]
+script = ExtResource("2_plastik")
+sprite_frames = SubResource("SpriteFrames_wp5od")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=558182377]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1874919356]
+shape = SubResource("RectangleShape2D_wp5od")

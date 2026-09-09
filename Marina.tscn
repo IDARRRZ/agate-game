@@ -55,7 +55,7 @@ animations = [{
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_g4v7s"]
-radius = 40.792156
+radius = 64.0
 
 [node name="Marina" type="CharacterBody2D" unique_id=1525694815]
 script = ExtResource("1_rpsd3")

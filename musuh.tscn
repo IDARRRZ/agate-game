@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://musuh.gd" id="1_musuh"]
+[ext_resource type="Texture2D" path="res://arts/characters/Shark.png" id="2_sprite"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 220.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hurt"]
+radius = 28.0
+
+[node name="Musuh" type="CharacterBody2D"]
+script = ExtResource("1_musuh")
+
+[node name="DetectionArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea"]
+shape = SubResource("CircleShape2D_detect")
+
+[node name="HurtArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtArea"]
+shape = SubResource("CircleShape2D_hurt")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(2.0, 2.0)
+texture = ExtResource("2_sprite")

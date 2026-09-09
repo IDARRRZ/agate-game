@@ -56,6 +56,19 @@ Tina: Menyelamlah kembali, dan temui ia di dasar lautan.
 Tina: Ia akan membimbingmu membersihkan seluruh samudra ini.
 => END
 
+~ marina_quest_active
+Tina: Bagaimana latihannya dengan Marina?
+Tina: {{GameManager.get_marina_quest_progress()}}
+Tina: Teruslah berjuang. Dia guru yang bijaksana.
+=> END
+
+~ marina_quest_done
+Tina: Kabar baik terdengar dari kedalaman!
+Tina: Kau sudah lulus bimbingan Marina. Aku bangga padamu.
+Tina: Sekarang laut lepas menjadi tanggung jawabmu.
+Tina: Bersihkan setiap sudut, dan biarkan samudra bernyanyi kembali.
+=> END
+
 ~ ending
 Tina: Rasakan itu...
 Tina: Ombak tidak lagi menangis. Mereka bernyanyi.

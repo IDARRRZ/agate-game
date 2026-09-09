@@ -14,13 +14,19 @@ var facing_direction: Vector2 = Vector2.RIGHT
 # Repair/Interact system
 var nearby_coral: Array = []
 
+# Trash collection (Act 2 underwater)
+var nearby_trash: Array = []
+
 # Hurt system
-var hurt_timer: float =0.0
+var hurt_timer: float = 0.0
 var is_hurt_active: bool = false
 var is_hurt_playing: bool = false
 const HURT_INTERVAL: float = 2.0
 
 @onready var oxygen = $Oxygen
+
+# HUD label untuk jumlah sampah dibawa
+var trash_hud: Label
 
 func _ready() -> void:
 	add_to_group("player") # Ensure detection
@@ -31,6 +37,33 @@ func _ready() -> void:
 	oxygen.o2_depleted.connect(_return_to_surface)
 	oxygen.o2_low_warning.connect(_on_o2_low)
 	oxygen.start_oxygen()
+
+	_setup_trash_hud()
+	_update_trash_hud()
+	GameManager.trash_carried_changed.connect(_update_trash_hud)
+	GameManager.marina_met_changed.connect(_update_trash_hud)
+
+func _setup_trash_hud() -> void:
+	var layer = CanvasLayer.new()
+	add_child(layer)
+	trash_hud = Label.new()
+	trash_hud.name = "TrashHud"
+	trash_hud.position = Vector2(12, 12)
+	trash_hud.add_theme_font_size_override("font_size", 28)
+	trash_hud.add_theme_color_override("font_color", Color(1, 1, 1))
+	trash_hud.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	trash_hud.add_theme_constant_override("outline_size", 4)
+	layer.add_child(trash_hud)
+
+func _update_trash_hud() -> void:
+	if trash_hud and trash_hud.is_inside_tree():
+		if GameManager.marina_met:
+			var total = GameManager.get_carried_count()
+			trash_hud.text = "Sampah: %d/%d" % [total, GameManager.bag_capacity]
+			trash_hud.add_theme_color_override("font_color", Color(1, 1, 1))
+		else:
+			trash_hud.text = "KUNCI: Temui Marina"
+			trash_hud.add_theme_color_override("font_color", Color(1, 0.85, 0.2))
 
 func _on_o2_low():
 	is_hurt_active = true
@@ -133,16 +166,22 @@ func play_hurt_animation() -> void:
 			anim.play("swim_idle")
 
 func _input(event: InputEvent) -> void:
-	# F key - repair coral
+	# F key - repair coral, atau collect sampah jika dekat sampah
 	if event.is_action_pressed("pickup"):
-		try_repair_coral()
+		if nearby_coral.size() > 0:
+			try_repair_coral()
+		elif nearby_trash.size() > 0:
+			try_pickup_trash()
 	
-	# M1 - repair animation (hanya jika menghadap horizontal)
+	# M1 - collect trash dulu; jika tidak ada, repair animation
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			var facing_horizontal = abs(facing_direction.x) > abs(facing_direction.y)
-			if facing_horizontal:
-				play_repair_animation()
+			if nearby_trash.size() > 0:
+				try_pickup_trash()
+			else:
+				var facing_horizontal = abs(facing_direction.x) > abs(facing_direction.y)
+				if facing_horizontal:
+					play_repair_animation()
 
 func play_repair_animation() -> void:
 	var anim = get_animasi()
@@ -175,3 +214,42 @@ func register_nearby_coral(coral: Node) -> void:
 
 func unregister_nearby_coral(coral: Node) -> void:
 	nearby_coral.erase(coral)
+
+# Trash detection & pickup
+func register_nearby_trash(trash: Node) -> void:
+	if not nearby_trash.has(trash):
+		nearby_trash.append(trash)
+
+func unregister_nearby_trash(trash: Node) -> void:
+	nearby_trash.erase(trash)
+
+func try_pickup_trash() -> void:
+	if nearby_trash.size() == 0:
+		return
+
+	# Gate: koleksi sampah hanya bisa setelah Marina membuka Act 2
+	if not GameManager.marina_met:
+		AudioManager.play_sfx("error")
+		print("[PlayerSwim] Kunci: Bicaralah dengan Marina dulu")
+		return
+
+	# Hint: jika quest Marina belum diambil
+	if not GameManager.marina_quest_active and not GameManager.marina_quest_completed:
+		print("[PlayerSwim] Hint: Bicara dengan Marina untuk mengambil quest pertama.")
+
+	var trash = nearby_trash[0]
+	if not is_instance_valid(trash):
+		nearby_trash.erase(trash)
+		return
+
+	var trash_type: String = ""
+	if "trash_type" in trash:
+		trash_type = str(trash.trash_type)
+	if GameManager.collect_underwater_trash(trash_type):
+		AirQuality.on_collect_trash()
+		trash.queue_free()
+		nearby_trash.erase(trash)
+		AudioManager.play_sfx("pickup")
+		print("[PlayerSwim] Sampah diambil: ", trash_type)
+	else:
+		AudioManager.play_sfx("error")

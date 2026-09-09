@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://zone_progress_ui.gd" id="1_zpui"]
+
+[node name="ZoneProgressUI" type="CanvasLayer"]
+script = ExtResource("1_zpui")
+
+[node name="Panel" type="Panel" parent="."]
+offset_left = 20.0
+offset_top = 480.0
+offset_right = 260.0
+offset_bottom = 648.0
+
+[node name="ZoneList" type="VBoxContainer" parent="Panel"]
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 232.0
+offset_bottom = 162.0
+theme_override_constants/separation = 2

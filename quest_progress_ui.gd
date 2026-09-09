@@ -1,11 +1,17 @@
 extends CanvasLayer
 
+# Quest Progress UI — menampilkan progres quest aktif
+# Dual mode: Act 1 (Tina quest) atau Act 2 (Marina quest)
+
 @onready var counter_label: Label = $MarginContainer/Label
+
+enum QuestMode { NONE, TINA, MARINA }
+var current_mode: QuestMode = QuestMode.NONE
 
 func _ready() -> void:
 	# Use call_deferred to ensure GameManager is ready
 	call_deferred("_connect_signals")
-	
+
 	# Start hidden
 	visible = false
 	print("[QuestUI] Ready, starting hidden")
@@ -18,12 +24,14 @@ func _connect_signals() -> void:
 		GameManager.quest_completed_signal.connect(_on_quest_completed)
 		GameManager.quest_failed_signal.connect(_on_quest_failed)
 		GameManager.timer_updated.connect(_on_timer_updated)
+		GameManager.marina_quest_progress_changed.connect(_on_marina_progress)
 		print("[QuestUI] Signals connected!")
 	else:
 		print("[QuestUI] ERROR: GameManager not found!")
 
 func _on_quest_started(_spawn_count: int) -> void:
-	print("[QuestUI] Quest started - showing UI")
+	print("[QuestUI] Tina quest started - showing UI")
+	current_mode = QuestMode.TINA
 	visible = true
 	update_display()
 
@@ -31,24 +39,56 @@ func _on_trash_collected(_count: int) -> void:
 	update_display()
 
 func _on_timer_updated(_time_left: float) -> void:
-	update_display()
+	if current_mode == QuestMode.TINA:
+		update_display()
 
 func _on_quest_completed() -> void:
+	if current_mode != QuestMode.TINA:
+		return
 	if counter_label:
 		counter_label.text = "[SUKSES] Quest Selesai! +100"
 	await get_tree().create_timer(2.0).timeout
 	visible = false
+	current_mode = QuestMode.NONE
 
 func _on_quest_failed() -> void:
+	if current_mode != QuestMode.TINA:
+		return
 	if counter_label:
 		counter_label.text = "[GAGAL] Waktu Habis!"
 	await get_tree().create_timer(2.0).timeout
 	visible = false
+	current_mode = QuestMode.NONE
+
+func _on_marina_progress(_collected: int, _target: int, _sort_correct: int, _sort_target: int) -> void:
+	# Hanya tampilkan UI kalau Tina quest tidak aktif
+	if current_mode == QuestMode.TINA:
+		return
+	current_mode = QuestMode.MARINA
+	visible = true
+	update_marina_display()
 
 func update_display() -> void:
+	if current_mode == QuestMode.MARINA:
+		update_marina_display()
+		return
 	if counter_label:
 		var trash_text = "Sampah: " + str(GameManager.trash_count) + "/" + str(GameManager.target_trash)
 		var timer_text = "Waktu: " + GameManager.get_formatted_time()
 		counter_label.text = trash_text + " | " + timer_text
 	else:
 		print("[QuestUI] ERROR: counter_label is null!")
+
+func update_marina_display() -> void:
+	if counter_label:
+		var c = GameManager.marina_quest_collected
+		var t = GameManager.marina_quest_target
+		var sc = GameManager.marina_quest_sort_correct
+		var st = GameManager.marina_quest_sort_target
+		counter_label.text = "[Marina] Sampah: %d/%d | Sortir: %d/%d" % [c, t, sc, st]
+		# Auto-hide kalau quest selesai
+		if GameManager.marina_quest_completed:
+			counter_label.text = "[SUKSES] Quest Marina Selesai! +%d" % GameManager.QUEST_REWARD
+			await get_tree().create_timer(2.5).timeout
+			visible = false
+			current_mode = QuestMode.NONE

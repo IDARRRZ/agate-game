@@ -12,7 +12,6 @@ var is_chatting = false
 var player
 var player_in_chat_zone = false
 
-# Dialogue Manager integration
 @export var dialogue_resource: DialogueResource
 @export var dialogue_start: String = "start"
 
@@ -27,6 +26,28 @@ func _ready():
 	start_pos = position
 	$Timer.start()
 	$AnimatedSprite2D.play("idle")
+
+	var area = get_node_or_null("area_chat_detection")
+	if not area:
+		area = get_node_or_null("chat_detection_area")
+	if area:
+		area.collision_mask = 3
+		area.monitoring = true
+		if not area.body_entered.is_connected(_on_chat_detection_area_body_entered):
+			area.body_entered.connect(_on_chat_detection_area_body_entered)
+		if not area.body_exited.is_connected(_on_chat_detection_area_body_exited):
+			area.body_exited.connect(_on_chat_detection_area_body_exited)
+	else:
+		push_warning("[NPC] Tidak ada Area2D chat detection!")
+
+func _unhandled_input(event: InputEvent) -> void:
+	if is_chatting or not player_in_chat_zone:
+		return
+	var is_e = event.is_action_pressed("interact") or (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_E)
+	if not is_e:
+		return
+	start_dialogue()
+	get_viewport().set_input_as_handled()
 
 func choose(array):
 	array.shuffle()
@@ -56,18 +77,12 @@ func update_animation():
 			else:
 				$AnimatedSprite2D.play("walk_n")
 
-func _input(event):
-	if event.is_action_pressed("interact"):
-		if player_in_chat_zone and !is_chatting:
-			start_dialogue()
-
 func start_dialogue():
 	is_chatting = true
 	is_roaming = false
 	velocity = Vector2.ZERO
 	$AnimatedSprite2D.play("idle")
 
-	# NPC hanya berbicara tentang alam - random dialogue
 	var dialogue_title = dialogue_start
 
 	if dialogue_resource:
@@ -80,12 +95,12 @@ func _on_dialogue_ended(_resource):
 	DialogueManager.dialogue_ended.disconnect(_on_dialogue_ended)
 
 func _on_chat_detection_area_body_entered(body: Node2D) -> void:
-	if body.has_method("Player") or body.is_in_group("player"):
+	if body.is_in_group("player") or body.name == "player":
 		player = body
 		player_in_chat_zone = true
 
 func _on_chat_detection_area_body_exited(body: Node2D) -> void:
-	if body.has_method("Player") or body.is_in_group("player"):
+	if body.is_in_group("player") or body.name == "player":
 		player_in_chat_zone = false
 
 func _on_timer_timeout() -> void:

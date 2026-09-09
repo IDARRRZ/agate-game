@@ -1,0 +1,210 @@
+[gd_scene format=3 uid="uid://cidmhvyodwoe3"]
+
+[ext_resource type="Texture2D" uid="uid://ddhhcs3udpx5x" path="res://plastik laut.png" id="1_mv8iw"]
+[ext_resource type="Script" uid="uid://cymxgpupcap4n" path="res://sorting_station_ui.gd" id="1_ui"]
+[ext_resource type="Texture2D" uid="uid://cydchumrtqxbd" path="res://tests/sampah logam.png" id="2_kh76r"]
+[ext_resource type="Script" uid="uid://seoil11xtxmn" path="res://trash_slot.gd" id="2_slot"]
+[ext_resource type="Texture2D" uid="uid://cqj8b506a2dtf" path="res://tests/sampah buah.png" id="3_74d88"]
+[ext_resource type="Script" uid="uid://do7ghrhk6i7ii" path="res://bin_drop_target.gd" id="3_bin"]
+[ext_resource type="Texture2D" uid="uid://c4xwklmhhm1mb" path="res://icon plastic.png" id="4_tplastik"]
+[ext_resource type="Texture2D" uid="uid://cerc64lhn8pck" path="res://icon metal.png" id="5_tlogam"]
+[ext_resource type="Texture2D" uid="uid://il86kfh2m5ob" path="res://icon organic.png" id="6_torganik"]
+
+[node name="SortingStationUI" type="CanvasLayer" unique_id=59372923]
+script = ExtResource("1_ui")
+
+[node name="Panel" type="Panel" parent="." unique_id=1277136715]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -240.0
+offset_right = 360.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="Panel" unique_id=770602777]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 16.0
+offset_top = 14.0
+offset_right = -16.0
+offset_bottom = 46.0
+theme_override_font_sizes/font_size = 26
+text = "Stasiun Sortir Sampah"
+horizontal_alignment = 1
+
+[node name="InstructionLabel" type="Label" parent="Panel" unique_id=1308426061]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 16.0
+offset_top = 52.0
+offset_right = -16.0
+offset_bottom = 74.0
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "Drag sampah ke bin yang benar"
+horizontal_alignment = 1
+
+[node name="CloseButton" type="Button" parent="Panel" unique_id=178496193]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -42.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 42.0
+text = "X"
+
+[node name="Content" type="HBoxContainer" parent="Panel" unique_id=1517323999]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 82.0
+offset_right = -20.0
+offset_bottom = -42.0
+theme_override_constants/separation = 24
+
+[node name="BagSection" type="VBoxContainer" parent="Panel/Content" unique_id=754151243]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="SlotPlastik" type="PanelContainer" parent="Panel/Content/BagSection" unique_id=1230917041]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+script = ExtResource("2_slot")
+trash_type = "plastik"
+icon_texture = ExtResource("4_tplastik")
+
+[node name="HBox" type="HBoxContainer" parent="Panel/Content/BagSection/SlotPlastik" unique_id=134464172]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="IconTex" type="TextureRect" parent="Panel/Content/BagSection/SlotPlastik/HBox" unique_id=593198096]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+texture = ExtResource("1_mv8iw")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="Panel/Content/BagSection/SlotPlastik/HBox" unique_id=1250858970]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "x0"
+
+[node name="SlotLogam" type="PanelContainer" parent="Panel/Content/BagSection" unique_id=1842948829]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+script = ExtResource("2_slot")
+trash_type = "logam"
+icon_texture = ExtResource("5_tlogam")
+
+[node name="HBox" type="HBoxContainer" parent="Panel/Content/BagSection/SlotLogam" unique_id=1009601535]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="IconTex" type="TextureRect" parent="Panel/Content/BagSection/SlotLogam/HBox" unique_id=1671300979]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+texture = ExtResource("2_kh76r")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="Panel/Content/BagSection/SlotLogam/HBox" unique_id=1077405888]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "x0"
+
+[node name="SlotOrganik" type="PanelContainer" parent="Panel/Content/BagSection" unique_id=1562008133]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+script = ExtResource("2_slot")
+trash_type = "organik"
+icon_texture = ExtResource("6_torganik")
+
+[node name="HBox" type="HBoxContainer" parent="Panel/Content/BagSection/SlotOrganik" unique_id=1967267715]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="IconTex" type="TextureRect" parent="Panel/Content/BagSection/SlotOrganik/HBox" unique_id=1932255995]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+texture = ExtResource("3_74d88")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="Panel/Content/BagSection/SlotOrganik/HBox" unique_id=396071823]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "x0"
+
+[node name="BinsSection" type="VBoxContainer" parent="Panel/Content" unique_id=1517323946]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Row" type="HBoxContainer" parent="Panel/Content/BinsSection" unique_id=1724413871]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BinPlastik" type="TextureButton" parent="Panel/Content/BinsSection/Row" unique_id=1724413870]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("4_tplastik")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("3_bin")
+bin_type = "plastik"
+
+[node name="BinLogam" type="TextureButton" parent="Panel/Content/BinsSection/Row" unique_id=556289500]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("5_tlogam")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("3_bin")
+bin_type = "logam"
+
+[node name="BinOrganik" type="TextureButton" parent="Panel/Content/BinsSection/Row" unique_id=1700521993]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("6_torganik")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("3_bin")
+bin_type = "organik"
+
+[node name="FeedbackLabel" type="Label" parent="Panel/Content/BinsSection" unique_id=1107944300]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="CloseHint" type="Label" parent="Panel/Content/BinsSection" unique_id=1107944301]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "R tutup • X tutup"
+horizontal_alignment = 1

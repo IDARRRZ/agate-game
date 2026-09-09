@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cloiab7jmtw27"
-path="res://.godot/imported/plastic.png-be7e71f1654ef3de9e9ad7318c9f5052.ctex"
+uid="uid://c7my1bl83x273"
+path="res://.godot/imported/Organic Bin.png-72881c8d38d9d6f69e4f7822be9979f4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Asset sampah/plastic.png"
-dest_files=["res://.godot/imported/plastic.png-be7e71f1654ef3de9e9ad7318c9f5052.ctex"]
+source_file="res://Organic Bin.png"
+dest_files=["res://.godot/imported/Organic Bin.png-72881c8d38d9d6f69e4f7822be9979f4.ctex"]
 
 [params]
 

@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://zone_portal.gd" id="1_portal"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_portal"]
+size = Vector2(80, 80)
+
+[node name="ZonePortal" type="Area2D"]
+script = ExtResource("1_portal")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_portal")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]

@@ -1,27 +1,27 @@
-[gd_scene load_steps=5 format=3 uid="uid://qad2m0rpx3gb"]
+[gd_scene format=3 uid="uid://qad2m0rpx3gb"]
 
 [ext_resource type="Script" uid="uid://c4qh4ki0ktsrm" path="res://plastic.gd" id="1_eituy"]
-[ext_resource type="Texture2D" uid="uid://cloiab7jmtw27" path="res://Asset sampah/plastic.png" id="1_psudf"]
+[ext_resource type="Texture2D" uid="uid://cloiab7jmtw27" path="res://Asset sampah/tempat_plastic.png" id="1_psudf"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yf5fn"]
-size = Vector2(16, 32)
+size = Vector2(32, 32)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_g4v7s"]
-size = Vector2(16, 32)
+size = Vector2(32, 32)
 
-[node name="Plastic" type="Area2D"]
+[node name="Tempat Sampah Plastik" type="Area2D" unique_id=1105513492]
 script = ExtResource("1_eituy")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1403303198]
 shape = SubResource("RectangleShape2D_yf5fn")
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="."]
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=18355352]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=1658579365]
 shape = SubResource("RectangleShape2D_g4v7s")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1140380585]
 scale = Vector2(0.0968137, 0.0976562)
 texture = ExtResource("1_psudf")
 
-[node name="Node2D" type="Node2D" parent="."]
+[node name="Node2D" type="Node2D" parent="." unique_id=1124236644]

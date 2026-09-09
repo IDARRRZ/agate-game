@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://b7r4baq7t7vs3"]
+[gd_scene format=3 uid="uid://b7r4baq7t7vs3"]
 
 [ext_resource type="Script" uid="uid://0ptb0vbb77ml" path="res://logam.gd" id="1_6yvxs"]
 [ext_resource type="Texture2D" uid="uid://jgktgdjj4hil" path="res://Asset sampah/metal.png" id="1_qurum"]
@@ -7,21 +7,22 @@
 size = Vector2(32, 48)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_g4v7s"]
-size = Vector2(32, 48)
+size = Vector2(64, 56)
 
-[node name="Logam" type="Area2D"]
+[node name="Logam" type="Area2D" unique_id=950845526]
 script = ExtResource("1_6yvxs")
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="."]
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=374994749]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=1357821931]
 shape = SubResource("RectangleShape2D_yf5fn")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2080110419]
 scale = Vector2(0.144608, 0.140625)
 texture = ExtResource("1_qurum")
 
-[node name="Node2D" type="Node2D" parent="."]
+[node name="Node2D" type="Node2D" parent="." unique_id=775948371]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1789191004]
+position = Vector2(0, -4)
 shape = SubResource("RectangleShape2D_g4v7s")

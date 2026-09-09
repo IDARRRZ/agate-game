@@ -34,6 +34,272 @@ var inventory = {
 	"cable_ties": 0
 }
 
+# === UNDERWATER TRASH BAG (Act 2) ===
+# Sampah yang dibawa saat menyelam, dipilah di Sorting Station
+var carried_trash = {
+	"plastik": 0,
+	"logam": 0,
+	"organik": 0
+}
+var bag_capacity: int = 10
+
+# Bin yang sedang di-highlight di Sorting UI (kosong = tidak ada highlight)
+var highlighted_bin: String = ""
+
+# Material hasil sortir benar — dipakai Phase C (Recycling)
+var recycled_material = {
+	"plastik": 0,
+	"logam": 0,
+	"organik": 0
+}
+
+# Produk jadi hasil recycle sukses — dipakai Phase D (Upgrade Shop)
+var finished_products = {
+	"plastik": 0,
+	"logam": 0,
+	"organik": 0
+}
+
+# === UPGRADE EQUIPMENT (Phase D) ===
+const O2_BASE := 60.0
+const O2_PER_LEVEL := 30.0
+const O2_MAX_LEVEL := 2
+const BAG_BASE := 10
+const BAG_PER_LEVEL := 5
+const BAG_MAX_LEVEL := 2
+
+# Biaya per level (index = level saat ini): dibayar dengan finished_products
+const UPGRADE_COSTS = {
+	"o2_tank": [
+		{"plastik": 2, "logam": 1},
+		{"logam": 3, "plastik": 1},
+	],
+	"bag": [
+		{"organik": 2, "plastik": 1},
+		{"organik": 3, "logam": 1},
+	],
+}
+
+var o2_tank_level: int = 0
+var bag_level: int = 0
+
+# === MARINA QUEST (Act 2: daily quest dari guru sorting) ===
+# Setelah quest daratan Tina + repair coral, player bertemu Marina.
+# Marina memberi quest kumpulkan 5 sampah (campuran) dari laut,
+# lalu sortir dengan benar. Act 2 bebas loop setelah ini.
+var marina_quest_active: bool = false
+var marina_quest_completed: bool = false
+var marina_quest_target: int = 5
+var marina_quest_collected: int = 0
+var marina_quest_sort_correct: int = 0
+var marina_quest_sort_target: int = 3
+
+# === 4 ZONE SYSTEM (Phase F1) ===
+# GDD BAB 6.A: Beach → Coral Reef → Open Ocean → Deep Sea
+# Unlock: coral_reef butuh beach 25% clean; open_ocean butuh coral_reef 100%; deep_sea butuh open_ocean 100%
+const ZONE_ORDER := ["beach", "coral_reef", "open_ocean", "deep_sea"]
+const ZONE_UNLOCK_REQ := {
+	"beach": 0.0,
+	"coral_reef": 0.25,   # unlock setelah Beach 25% clean
+	"open_ocean": 1.0,    # unlock setelah Coral Reef 100% clean
+	"deep_sea": 1.0,      # unlock setelah Open Ocean 100% clean
+}
+const ZONE_O2_DRAIN := {
+	"beach": 1.0,
+	"coral_reef": 1.2,
+	"open_ocean": 1.5,
+	"deep_sea": 2.0,
+}
+const CLEAN_PER_SORT := 2.0   # setiap sort benar = +2% zone clean
+
+var zone_progress := {
+	"beach": 0.0,
+	"coral_reef": 0.0,
+	"open_ocean": 0.0,
+	"deep_sea": 0.0,
+}
+var current_zone: String = "beach"
+
+func get_carried_count() -> int:
+	return carried_trash["plastik"] + carried_trash["logam"] + carried_trash["organik"]
+
+func collect_underwater_trash(trash_type: String) -> bool:
+	if trash_type == "" or not carried_trash.has(trash_type):
+		return false
+	if get_carried_count() >= bag_capacity:
+		print("[GameManager] Bag penuh! Kapasitas: ", bag_capacity)
+		return false
+	carried_trash[trash_type] += 1
+	trash_carried_changed.emit()
+	# Trigger quest progress Marina (jika quest aktif)
+	register_marina_collect()
+	print("[GameManager] Sampah laut: ", trash_type, " | ", get_carried_count(), "/", bag_capacity)
+	return true
+
+func reset_carried_trash() -> void:
+	carried_trash = {"plastik": 0, "logam": 0, "organik": 0}
+	trash_carried_changed.emit()
+	print("[GameManager] Karung sampah laut dikosongkan")
+
+# === SORTING (Phase B) ===
+# Sortir sampah ke bin. BENAR: -1% polusi + material. SALAH: +1% polusi.
+func sort_trash(trash_type: String, bin_type: String) -> bool:
+	if trash_type == "" or not carried_trash.has(trash_type):
+		return false
+	if carried_trash[trash_type] <= 0:
+		return false
+
+	carried_trash[trash_type] -= 1
+	trash_carried_changed.emit()
+
+	if trash_type == bin_type:
+		if recycled_material.has(bin_type):
+			recycled_material[bin_type] += 1
+		AirQuality.on_sort_correct()
+		AudioManager.play_sfx("success")
+		# Sort benar di zone aktif → naikkan progress zone
+		add_zone_clean(current_zone, CLEAN_PER_SORT)
+		# Trigger quest progress Marina (jika quest aktif)
+		register_marina_sort(true)
+		print("[GameManager] Sort BENAR: ", trash_type, " | material: ", recycled_material[bin_type])
+		return true
+	else:
+		AirQuality.on_sort_wrong()
+		AudioManager.play_sfx("error")
+		print("[GameManager] Sort SALAH: ", trash_type, " dibuang ke bin ", bin_type)
+		return false
+
+func get_recycled_count() -> int:
+	return recycled_material["plastik"] + recycled_material["logam"] + recycled_material["organik"]
+
+# === RECYCLING (Phase C) ===
+# Mini-game: konsumsi 1 material → sukses = +1 finished product, gagal = material hilang
+func consume_for_recycle(trash_type: String) -> bool:
+	if trash_type == "" or not recycled_material.has(trash_type):
+		return false
+	if recycled_material[trash_type] <= 0:
+		return false
+	recycled_material[trash_type] -= 1
+	recycled_material_changed.emit()
+	return true
+
+func add_finished_product(trash_type: String) -> void:
+	if finished_products.has(trash_type):
+		finished_products[trash_type] += 1
+		print("[GameManager] Produk jadi: ", trash_type, " | total: ", get_finished_count())
+
+func get_finished_count() -> int:
+	return finished_products["plastik"] + finished_products["logam"] + finished_products["organik"]
+
+# === UPGRADE FUNCTIONS (Phase D) ===
+func get_max_o2() -> float:
+	return O2_BASE + o2_tank_level * O2_PER_LEVEL
+
+func get_upgrade_level(id: String) -> int:
+	match id:
+		"o2_tank":
+			return o2_tank_level
+		"bag":
+			return bag_level
+	return 0
+
+func get_upgrade_max_level(id: String) -> int:
+	match id:
+		"o2_tank":
+			return O2_MAX_LEVEL
+		"bag":
+			return BAG_MAX_LEVEL
+	return 0
+
+func get_next_upgrade_costs(id: String) -> Dictionary:
+	var level := get_upgrade_level(id)
+	if level >= get_upgrade_max_level(id) or not UPGRADE_COSTS.has(id):
+		return {}
+	return UPGRADE_COSTS[id][level]
+
+func can_afford(costs: Dictionary) -> bool:
+	for type in costs:
+		if not finished_products.has(type) or finished_products[type] < costs[type]:
+			return false
+	return true
+
+func pay_costs(costs: Dictionary) -> bool:
+	if not can_afford(costs):
+		return false
+	for type in costs:
+		finished_products[type] -= costs[type]
+	recycled_material_changed.emit()
+	return true
+
+func purchase_upgrade(id: String) -> bool:
+	var level := get_upgrade_level(id)
+	if level >= get_upgrade_max_level(id):
+		print("[GameManager] Upgrade ", id, " sudah MAX")
+		return false
+
+	var costs: Dictionary = get_next_upgrade_costs(id)
+	if not pay_costs(costs):
+		print("[GameManager] Produk tidak cukup untuk upgrade ", id, " — butuh ", costs)
+		return false
+
+	match id:
+		"o2_tank":
+			o2_tank_level += 1
+		"bag":
+			bag_level += 1
+			bag_capacity = BAG_BASE + bag_level * BAG_PER_LEVEL
+
+	upgrades_changed.emit()
+	print("[GameManager] Upgrade ", id, " → Lv", level + 1, " | biaya: ", costs)
+	return true
+
+# === ZONE FUNCTIONS (Phase F1) ===
+func get_zone_clean_percent(zone: String) -> float:
+	if not zone_progress.has(zone):
+		return 0.0
+	return zone_progress[zone]
+
+func add_zone_clean(zone: String, pct: float) -> void:
+	if not zone_progress.has(zone):
+		return
+	zone_progress[zone] = clampf(zone_progress[zone] + pct, 0.0, 100.0)
+	zone_progress_changed.emit()
+	print("[GameManager] Zone ", zone, " cleanliness: ", zone_progress[zone], "%")
+
+func get_zone_o2_drain(zone: String) -> float:
+	return ZONE_O2_DRAIN.get(zone, 1.0)
+
+func is_zone_unlocked(zone: String) -> bool:
+	if not ZONE_UNLOCK_REQ.has(zone):
+		return false
+	var req: float = ZONE_UNLOCK_REQ[zone]
+	# Beach selalu free; zona lain butuh requirement pada zona SEBELUMNYA
+	if zone == "beach":
+		return true
+	var prev_idx := ZONE_ORDER.find(zone) - 1
+	if prev_idx < 0:
+		return false
+	var prev_zone: String = ZONE_ORDER[prev_idx]
+	return zone_progress[prev_zone] >= (req * 100.0)
+
+func is_all_zones_clean() -> bool:
+	for zone in ZONE_ORDER:
+		if zone_progress[zone] < 100.0:
+			return false
+	return true
+
+func get_next_zone() -> String:
+	var idx := ZONE_ORDER.find(current_zone)
+	if idx < 0 or idx >= ZONE_ORDER.size() - 1:
+		return current_zone
+	return ZONE_ORDER[idx + 1]
+
+func get_previous_zone() -> String:
+	var idx := ZONE_ORDER.find(current_zone)
+	if idx <= 0:
+		return current_zone
+	return ZONE_ORDER[idx - 1]
+
 # Signals
 signal quest_started(spawn_count: int)
 signal trash_collected(new_count: int)
@@ -43,6 +309,12 @@ signal timer_updated(time_left: float)
 signal coins_updated(new_amount: int)
 signal item_purchased(item_name: String)
 signal inventory_updated() # New Signal
+signal trash_carried_changed
+signal marina_met_changed
+signal recycled_material_changed
+signal upgrades_changed
+signal zone_progress_changed
+signal marina_quest_progress_changed(collected: int, target: int, sort_correct: int, sort_target: int)
 
 func _process(delta: float) -> void:
 	if timer_active and quest_active:
@@ -205,6 +477,64 @@ func _unhandled_input(event: InputEvent) -> void:
 func all_quests_done() -> bool:
 	return quest_times_completed >= 2
 
+# === MARINA QUEST FUNCTIONS ===
+# Flow: Player bicara Marina (Act 2) → Marina minta kumpulkan 5 sampah dari laut,
+# sortir 3 dengan benar. Selesai → Marina ajari 4-zone unlock.
+func start_marina_quest() -> void:
+	marina_quest_active = true
+	marina_quest_completed = false
+	marina_quest_collected = 0
+	marina_quest_sort_correct = 0
+	marina_quest_progress_changed.emit(
+		marina_quest_collected, marina_quest_target,
+		marina_quest_sort_correct, marina_quest_sort_target
+	)
+	print("[GameManager] Marina quest started! Target: ", marina_quest_target, " sampah, ", marina_quest_sort_target, " sortir benar")
+
+# Dipanggil setiap player collect trash di laut. Increment counter quest.
+func register_marina_collect() -> void:
+	if not marina_quest_active or marina_quest_completed:
+		return
+	if marina_quest_collected < marina_quest_target:
+		marina_quest_collected += 1
+		marina_quest_progress_changed.emit(
+			marina_quest_collected, marina_quest_target,
+			marina_quest_sort_correct, marina_quest_sort_target
+		)
+		print("[GameManager] Marina quest collect: ", marina_quest_collected, "/", marina_quest_target)
+	_check_marina_quest_complete()
+
+# Dipanggil setiap sortir benar (sudah ada di sort_trash).
+func register_marina_sort(correct: bool) -> void:
+	if not marina_quest_active or marina_quest_completed:
+		return
+	if correct and marina_quest_sort_correct < marina_quest_sort_target:
+		marina_quest_sort_correct += 1
+		marina_quest_progress_changed.emit(
+			marina_quest_collected, marina_quest_target,
+			marina_quest_sort_correct, marina_quest_sort_target
+		)
+		print("[GameManager] Marina quest sort: ", marina_quest_sort_correct, "/", marina_quest_sort_target)
+	_check_marina_quest_complete()
+
+func _check_marina_quest_complete() -> void:
+	if marina_quest_collected >= marina_quest_target and marina_quest_sort_correct >= marina_quest_sort_target:
+		marina_quest_completed = true
+		marina_quest_active = false
+		add_coins(QUEST_REWARD)
+		AudioManager.play_sfx("success")
+		print("[GameManager] Marina quest COMPLETE! +", QUEST_REWARD, " coins")
+
+func get_marina_quest_progress() -> String:
+	if marina_quest_completed:
+		return "Selesai! Kamu sudah paham menyortir."
+	if not marina_quest_active:
+		return "Belum dimulai"
+	return "Sampah: %d/%d | Sortir benar: %d/%d" % [
+		marina_quest_collected, marina_quest_target,
+		marina_quest_sort_correct, marina_quest_sort_target
+	]
+
 func reset_for_respawn() -> void:
 	quest_active = false
 	quest_completed = false
@@ -215,10 +545,24 @@ func reset_for_respawn() -> void:
 	spawn_at_bridge = false
 	intro_shown = false
 	inventory = {"besi": 0, "pasir": 0, "cable_ties": 0}
+	carried_trash = {"plastik": 0, "logam": 0, "organik": 0}
+	bag_capacity = 10
+	highlighted_bin = ""
+	recycled_material = {"plastik": 0, "logam": 0, "organik": 0}
+	finished_products = {"plastik": 0, "logam": 0, "organik": 0}
+	o2_tank_level = 0
+	bag_level = 0
+	bag_capacity = BAG_BASE
 	coins = 0
 	score = 0
+	zone_progress = {"beach": 0.0, "coral_reef": 0.0, "open_ocean": 0.0, "deep_sea": 0.0}
+	current_zone = "beach"
 	coral_repaired = false
 	marina_met = false
+	marina_quest_active = false
+	marina_quest_completed = false
+	marina_quest_collected = 0
+	marina_quest_sort_correct = 0
 	print("[GameManager] Reset for respawn")
 
 func print_inventory_debug() -> void:
@@ -238,6 +582,7 @@ func set_coral_repaired() -> void:
 
 func set_marina_met() -> void:
 	marina_met = true
+	marina_met_changed.emit()
 	print("[GameManager] Marina telah ditemui!")
 
 func save_poem_to_txt() -> void:

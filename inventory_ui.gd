@@ -8,9 +8,9 @@ extends CanvasLayer
 # Preload textures (Hardcoded for simplicity, or load dynamically)
 # Gunakan path yang valid dari project
 var textures = {
-	"besi": preload("res://Gemini_Generated_Image_ur85juur85juur85-removebg-preview.png"),
-	"pasir": preload("res://Gemini_Generated_Image_4fmj6s4fmj6s4fmj-removebg-preview.png"),
-	"cable_ties": preload("res://Gemini_Generated_Image_qko9c1qko9c1qko9-removebg-preview.png")
+	"besi": preload("res://Besi.png"),
+	"pasir": preload("res://Pasir.png"),
+	"cable_ties": preload("res://Cable.png")
 }
 
 func _ready():

@@ -64,34 +64,43 @@ func _ready() -> void:
 # MAIN LOOP
 # ============================================================
 
+var _last_active_time: float = 0.0
+const NEGLECT_DELAY: float = 120.0
+
+func _is_darat() -> bool:
+	var scene = get_tree().current_scene
+	if not scene:
+		return false
+	return scene.name == "dunia" or scene.name == "Dunia"
+
 func _process(delta: float) -> void:
 	if is_game_over:
 		return
+	if not _is_darat():
+		return
 	
-	# Grace period countdown
 	if is_grace_active:
 		grace_timer -= delta
 		if grace_timer <= 0.0:
 			is_grace_active = false
 			grace_timer = 0.0
-			print("[AirQuality] Grace period selesai! Polusi mulai naik.")
+			print("[AirQuality] Grace selesai! Polusi AI darat mulai.")
 		return
 	
-	# Auto-increase pollution
+	var has_active = GameManager.quest_active or GameManager.marina_quest_active
+	if has_active:
+		_last_active_time = Time.get_ticks_msec() / 1000.0
+	
+	var neglected: bool = not has_active and (Time.get_ticks_msec() / 1000.0 - _last_active_time) > NEGLECT_DELAY
+	current_rate = REJECTED_RATE if neglected else NATURAL_RATE
+	
 	pollution_level += current_rate * delta
 	pollution_level = clampf(pollution_level, 0.0, 100.0)
 	
-	# Cek threshold
 	check_threshold()
-	
-	# Update target color
 	target_color = get_overlay_color(pollution_level)
-	
-	# Smooth transition
 	if overlay:
 		overlay.color = overlay.color.lerp(target_color, LERP_SPEED * delta)
-	
-	# Game over check
 	if pollution_level >= 100.0:
 		_game_over()
 
@@ -237,20 +246,4 @@ func _on_quest_failed() -> void:
 	pollution_changed.emit(pollution_level)
 	print("[AirQuality] Quest gagal! +10% pollution, rate: ", current_rate, "/s")
 
-# ============================================================
-# DEBUG
-# ============================================================
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
-		match event.keycode:
-			KEY_P:
-				print("[AirQuality] Level: ", pollution_level, "% | Grace: ", is_grace_active, " | Rate: ", current_rate)
-			KEY_M:
-				is_grace_active = false
-				grace_timer = 0.0
-				add_pollution(10.0)
-				print("[AirQuality] DEBUG: +10% pollution (grace bypassed)")
-			KEY_N:
-				reduce_pollution(10.0)
-				print("[AirQuality] DEBUG: -10% pollution")
+# DEBUG: hanya print state, tidak ada P/N input

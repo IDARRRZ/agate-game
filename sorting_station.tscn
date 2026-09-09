@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://sorting_station.gd" id="1_station"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_station"]
+size = Vector2(140, 140)
+
+[node name="SortingStation" type="Area2D"]
+script = ExtResource("1_station")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_station")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]

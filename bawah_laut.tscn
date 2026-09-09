@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" uid="uid://bmqaphievt0c8" path="res://player_swim.tscn" id="21_w6fkj"]
 [ext_resource type="PackedScene" uid="uid://byfa1ogvlholl" path="res://damaged_coral.tscn" id="22_j4yrx"]
 [ext_resource type="PackedScene" uid="uid://doj75uwfqsq68" path="res://Marina.tscn" id="23_j4yrx"]
+[ext_resource type="PackedScene" path="res://underwater_trash_spawner.tscn" id="24_j4yrx"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ewmgi"]
 texture = ExtResource("1_qfcdp")
@@ -4258,3 +4259,5 @@ position = Vector2(496, 437)
 
 [node name="Marina" parent="." unique_id=2006516212 instance=ExtResource("23_j4yrx")]
 position = Vector2(1008, 547)
+
+[node name="underwater_trash_spawner" parent="." unique_id=2006516213 instance=ExtResource("24_j4yrx")]
