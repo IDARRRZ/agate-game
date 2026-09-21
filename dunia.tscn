@@ -5496,5 +5496,5 @@ bin_type = "logam"
 position = Vector2(793, 1031)
 bin_type = "organik"
 
-[node name="RecyclingStation" parent="." instance=ExtResource("31_rec")]
-position = Vector2(720, 380)
+[node name="RecyclingStation" parent="." unique_id=1929194205 instance=ExtResource("31_rec")]
+position = Vector2(785, 959)

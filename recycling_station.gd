@@ -5,6 +5,7 @@ const RECYCLING_UI_SCENE := preload("res://recycling_ui.tscn")
 var player_in_area: bool = false
 var player_ref: Node = null
 var ui: CanvasLayer = null
+var prompt_label: Label = null
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -16,6 +17,21 @@ func _ready() -> void:
 	add_child(ui)
 	if ui.has_signal("ui_closed"):
 		ui.ui_closed.connect(_on_ui_closed)
+	_setup_prompt()
+
+func _setup_prompt() -> void:
+	prompt_label = Label.new()
+	prompt_label.text = "[G] Daur Ulang"
+	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt_label.position = Vector2(-70, -80)
+	prompt_label.size = Vector2(140, 26)
+	prompt_label.add_theme_font_size_override("font_size", 14)
+	prompt_label.add_theme_color_override("font_color", Color(0.4, 1.0, 0.6))
+	prompt_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	prompt_label.add_theme_constant_override("outline_size", 4)
+	prompt_label.visible = false
+	prompt_label.z_index = 20
+	add_child(prompt_label)
 
 func _input(event: InputEvent) -> void:
 	var is_g = event.is_action_pressed("interact_recycle")
@@ -69,11 +85,15 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") or body.name == "player":
 		player_in_area = true
 		player_ref = body
+		if prompt_label:
+			prompt_label.visible = true
 		print("[RecyclingStation] Dekat mesin — tekan G untuk daur ulang")
 
 func _on_body_exited(body: Node2D) -> void:
 	print("[RecyclingStation] body_exited ", body.name)
 	if body.is_in_group("player") or body.name == "player":
 		player_in_area = false
+		if prompt_label:
+			prompt_label.visible = false
 		if is_instance_valid(ui) and ui.visible:
 			close_ui()

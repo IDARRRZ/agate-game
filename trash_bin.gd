@@ -8,6 +8,7 @@ const SORTING_UI_SCENE := preload("res://sorting_station_ui.tscn")
 var player_in_range: bool = false
 var player_ref: Node = null
 var ui: CanvasLayer = null
+var prompt_label: Label = null
 
 func _ready() -> void:
 	monitoring = true
@@ -24,6 +25,22 @@ func _ready() -> void:
 		var sprite = get_node_or_null("Sprite2D")
 		if sprite:
 			sprite.texture = icon_texture
+
+	_setup_prompt()
+
+func _setup_prompt() -> void:
+	prompt_label = Label.new()
+	prompt_label.text = "[R] Pilah Sampah"
+	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt_label.position = Vector2(-70, -75)
+	prompt_label.size = Vector2(140, 26)
+	prompt_label.add_theme_font_size_override("font_size", 13)
+	prompt_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3))
+	prompt_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	prompt_label.add_theme_constant_override("outline_size", 4)
+	prompt_label.visible = false
+	prompt_label.z_index = 20
+	add_child(prompt_label)
 
 func _input(event: InputEvent) -> void:
 	var is_r = event.is_action_pressed("interact_sort")
@@ -94,11 +111,15 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") or body.name == "player":
 		player_in_range = true
 		player_ref = body
+		if prompt_label:
+			prompt_label.visible = true
 		print("[TrashBin] Dekat bin ", bin_type, " — tekan R untuk sortir")
 
 func _on_body_exited(body: Node2D) -> void:
 	print("[TrashBin] body_exited ", body.name, " bin=", bin_type)
 	if body.is_in_group("player") or body.name == "player":
 		player_in_range = false
+		if prompt_label:
+			prompt_label.visible = false
 		if is_instance_valid(ui) and ui.visible:
 			close_ui()

@@ -10,28 +10,52 @@ const TRASH_SCENES: Array[PackedScene] = [
 	preload("res://plastik_laut.tscn")
 ]
 
-@export var spawn_count: int = 12
-@export var spawn_area_min: Vector2 = Vector2(150, 250)
-@export var spawn_area_max: Vector2 = Vector2(1150, 620)
+@export var spawn_count: int = 26
+@export var spawn_area_min: Vector2 = Vector2(80, 150)
+@export var spawn_area_max: Vector2 = Vector2(1750, 1180)
 @export var max_attempts: int = 10
 
-# Spawn tambahan khusus zone lebih dalam (Open Ocean / Deep Sea)
-const EXTRA_TRASH_BY_ZONE := {
-	"beach": 0,
-	"coral_reef": 0,
-	"open_ocean": 6,
-	"deep_sea": 12,
-}
+var _respawn_timer: float = 0.0
+const RESPAWN_CHECK_INTERVAL := 8.0
+const MIN_TRASH_THRESHOLD := 6
 
 func _ready() -> void:
-	# Tambah jumlah trash sesuai zone aktif
-	var zone: String = GameManager.current_zone
-	spawn_count += EXTRA_TRASH_BY_ZONE.get(zone, 0)
 	call_deferred("_spawn_all")
 
+func _process(delta: float) -> void:
+	_respawn_timer += delta
+	if _respawn_timer >= RESPAWN_CHECK_INTERVAL:
+		_respawn_timer = 0.0
+		_check_respawn()
+
+func _check_respawn() -> void:
+	var current_trash_count := get_tree().get_nodes_in_group("trash").size()
+	if current_trash_count < MIN_TRASH_THRESHOLD:
+		# Respawn 4 sampah baru di perairan
+		for i in range(4):
+			_spawn_one()
+		print("[TrashSpawner] Respawn 4 sampah baru (sisa sebelumnya: ", current_trash_count, ")")
+
 func _spawn_all() -> void:
-	for i in range(spawn_count):
-		_spawn_one()
+	# Bagi sebaran sampah merata di 3 zona kedalaman
+	var depths := [
+		{"min_y": 180.0, "max_y": 650.0, "count": 9},   # Terumbu Karang
+		{"min_y": 650.0, "max_y": 950.0, "count": 9},   # Samudra Lepas
+		{"min_y": 950.0, "max_y": 1180.0, "count": 8},  # Palung Laut
+	]
+	for layer in depths:
+		for i in range(layer["count"]):
+			_spawn_in_range(layer["min_y"], layer["max_y"])
+
+func _spawn_in_range(min_y: float, max_y: float) -> void:
+	var scene: PackedScene = TRASH_SCENES.pick_random()
+	var trash = scene.instantiate()
+	var pos := Vector2(
+		randf_range(spawn_area_min.x, spawn_area_max.x),
+		randf_range(min_y, max_y)
+	)
+	trash.position = pos
+	get_parent().add_child(trash)
 
 func _spawn_one() -> void:
 	var scene: PackedScene = TRASH_SCENES.pick_random()

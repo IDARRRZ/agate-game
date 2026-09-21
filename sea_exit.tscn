@@ -1,13 +1,13 @@
-[gd_scene load_steps=3 format=3 uid="uid://c1u2jqspcfuot"]
+[gd_scene format=3 uid="uid://c1u2jqspcfuot"]
 
 [ext_resource type="Script" uid="uid://deduvajmmmk6v" path="res://sea_exit.gd" id="1_4i08m"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rgjvu"]
-size = Vector2(1163, 62)
+size = Vector2(3499, 62)
 
-[node name="SeaExit" type="Area2D"]
+[node name="SeaExit" type="Area2D" unique_id=851727268]
 script = ExtResource("1_4i08m")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(571.5, 21)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=417976566]
+position = Vector2(1739.5, 21)
 shape = SubResource("RectangleShape2D_rgjvu")

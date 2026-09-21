@@ -1,4 +1,5 @@
 ~ start
+do GameManager.set_marina_met()
 Marina: Kamu... kamu berhasil menyelamatkan karangku!
 Marina: Terima kasih. Aku Marina, penjaga kedalaman samudra ini.
 Marina: Selama bertahun-tahun aku menyaksikan laut ini mati pelan-pelan.

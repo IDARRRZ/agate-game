@@ -54,7 +54,7 @@ offset_right = -16.0
 offset_bottom = 74.0
 theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
 theme_override_font_sizes/font_size = 14
-text = "Drag sampah ke bin yang benar"
+text = "Klik tong sampah ATAU seret (drag) sampah dari tas ke tong yang cocok"
 horizontal_alignment = 1
 
 [node name="CloseButton" type="Button" parent="Panel" unique_id=178496193]

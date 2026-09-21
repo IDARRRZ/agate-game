@@ -27,12 +27,15 @@ const HURT_INTERVAL: float = 2.0
 
 # HUD label untuk jumlah sampah dibawa
 var trash_hud: Label
+var hint_hud: Label
 
 func _ready() -> void:
 	add_to_group("player") # Ensure detection
 	var anim = get_animasi()
 	if anim:
-		anim.play("swim_idle")
+		anim.rotation = 0.0
+		anim.scale = Vector2(1.0, 1.0)
+		_play_idle(anim)
 	
 	oxygen.o2_depleted.connect(_return_to_surface)
 	oxygen.o2_low_warning.connect(_on_o2_low)
@@ -42,28 +45,70 @@ func _ready() -> void:
 	_update_trash_hud()
 	GameManager.trash_carried_changed.connect(_update_trash_hud)
 	GameManager.marina_met_changed.connect(_update_trash_hud)
+	GameManager.zone_progress_changed.connect(_update_trash_hud)
+	GameManager.marina_quest_progress_changed.connect(func(_a,_b,_c,_d): _update_trash_hud())
 
 func _setup_trash_hud() -> void:
 	var layer = CanvasLayer.new()
+	layer.layer = 95
 	add_child(layer)
 	trash_hud = Label.new()
 	trash_hud.name = "TrashHud"
-	trash_hud.position = Vector2(12, 12)
-	trash_hud.add_theme_font_size_override("font_size", 28)
+	trash_hud.position = Vector2(16, 14)
+	trash_hud.add_theme_font_size_override("font_size", 24)
 	trash_hud.add_theme_color_override("font_color", Color(1, 1, 1))
 	trash_hud.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	trash_hud.add_theme_constant_override("outline_size", 4)
 	layer.add_child(trash_hud)
 
+	hint_hud = Label.new()
+	hint_hud.name = "HintHud"
+	hint_hud.position = Vector2(16, 44)
+	hint_hud.add_theme_font_size_override("font_size", 16)
+	hint_hud.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
+	hint_hud.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	hint_hud.add_theme_constant_override("outline_size", 3)
+	layer.add_child(hint_hud)
+
 func _update_trash_hud() -> void:
-	if trash_hud and trash_hud.is_inside_tree():
-		if GameManager.marina_met:
-			var total = GameManager.get_carried_count()
-			trash_hud.text = "Sampah: %d/%d" % [total, GameManager.bag_capacity]
+	if not trash_hud or not trash_hud.is_inside_tree():
+		return
+	if not GameManager.marina_met:
+		trash_hud.text = "KUNCI: Temui Marina di karang kanan"
+		trash_hud.add_theme_color_override("font_color", Color(1, 0.85, 0.2))
+		if hint_hud:
+			hint_hud.text = "Berenang ke kanan bawah untuk bicara dengan Marina"
+			hint_hud.add_theme_color_override("font_color", Color(1, 0.9, 0.4))
+	else:
+		var total: int = GameManager.get_carried_count()
+		if GameManager.marina_quest_active and not GameManager.marina_quest_completed:
+			var target: int = GameManager.marina_quest_target
+			var collected: int = GameManager.marina_quest_collected
+			trash_hud.text = "Sampah Tas: %d/%d  |  Quest Marina: %d/%d" % [total, GameManager.bag_capacity, collected, target]
 			trash_hud.add_theme_color_override("font_color", Color(1, 1, 1))
+			if hint_hud:
+				if collected >= target:
+					hint_hud.text = "✅ Target 5/5 terpenuhi! Berenang ke pintu keluar (kiri atas [H]) untuk memilah."
+					hint_hud.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4))
+				else:
+					hint_hud.text = "Ambil sampah laut dengan menekan [F] saat mendekatinya."
+					hint_hud.add_theme_color_override("font_color", Color(0.8, 0.95, 1.0))
 		else:
-			trash_hud.text = "KUNCI: Temui Marina"
-			trash_hud.add_theme_color_override("font_color", Color(1, 0.85, 0.2))
+			trash_hud.text = "Sampah Tas: %d/%d" % [total, GameManager.bag_capacity]
+			trash_hud.add_theme_color_override("font_color", Color(1, 1, 1))
+			if hint_hud:
+				if GameManager.is_all_zones_clean():
+					hint_hud.text = "🏆 Seluruh Samudra 100% Bersih! Bicaralah dengan Tina di dermaga [E]!"
+					hint_hud.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+				elif total >= GameManager.bag_capacity:
+					hint_hud.text = "Tas penuh! Kembali ke darat (pintu keluar kiri atas) untuk memilah."
+					hint_hud.add_theme_color_override("font_color", Color(1, 0.8, 0.3))
+				else:
+					var active_z := GameManager.get_current_healing_zone()
+					var z_name := GameManager.get_zone_display_name(active_z)
+					var z_pct := GameManager.get_zone_clean_percent(active_z)
+					hint_hud.text = "Pulihkan: %s (%.0f%%)  |  Ambil sampah [F], bawa ke darat [R]" % [z_name, z_pct]
+					hint_hud.add_theme_color_override("font_color", Color(0.8, 0.95, 1.0))
 
 func _on_o2_low():
 	is_hurt_active = true
@@ -107,41 +152,53 @@ func _physics_process(delta: float) -> void:
 		# Idle animation saat berhenti
 		var anim = get_animasi()
 		if anim and velocity.length() < 10 and not is_hurt_playing:
-			anim.play("swim_idle")
+			_play_idle(anim)
 	
 	# Move
 	move_and_slide()
 	
 	# Rotate sprite to face movement direction
-	update_sprite_rotation()
+	update_sprite_rotation(delta)
+
+func _play_idle(anim: AnimatedSprite2D) -> void:
+	if not anim or not anim.sprite_frames:
+		return
+	if anim.sprite_frames.has_animation("idle_swim"):
+		anim.play("idle_swim")
+	elif anim.sprite_frames.has_animation("swim_idle"):
+		anim.play("swim_idle")
 
 func update_swim_animation() -> void:
 	var anim = get_animasi()
-	if not anim:
-		return
-	if is_hurt_playing:
-		return
-	# Play swimming animation
-	if anim.animation != "swim":
-		anim.play("swim")
-
-func update_sprite_rotation() -> void:
-	var anim = get_animasi()
-	if not anim:
+	if not anim or is_hurt_playing or not anim.sprite_frames:
 		return
 	
-	# Rotate sprite berdasarkan arah gerak
-	if velocity.length() > 10:
-		var angle = facing_direction.angle()
-		
-		# Flip horizontal jika menghadap kiri
-		if facing_direction.x < 0:
-			anim.scale.x = -1
-			# Adjust rotation untuk sprite yang di-flip
-			anim.rotation = -angle - PI
-		else:
-			anim.scale.x = 1
-			anim.rotation = angle
+	# Jika berenang ke atas
+	if facing_direction.y < -0.4 and abs(facing_direction.y) > abs(facing_direction.x):
+		if anim.sprite_frames.has_animation("swim_up"):
+			if anim.animation != "swim_up":
+				anim.play("swim_up")
+			return
+	
+	# Berenang maju / horizontal
+	var forward_anim := "swim_idle" if anim.sprite_frames.has_animation("swim_idle") else "swim"
+	if anim.sprite_frames.has_animation(forward_anim) and anim.animation != forward_anim:
+		anim.play(forward_anim)
+
+func update_sprite_rotation(_delta: float = 0.0) -> void:
+	var anim = get_animasi()
+	if not anim or is_hurt_playing:
+		return
+	
+	# Rotasi selalu tegak natural (0.0) agar pixel art rapi tanpa miring atau distorsi
+	anim.rotation = 0.0
+	anim.scale.y = 1.0
+	
+	# Balik arah kiri / kanan sesuai arah hadap
+	if facing_direction.x < -0.05:
+		anim.scale.x = -1.0
+	elif facing_direction.x > 0.05:
+		anim.scale.x = 1.0
 
 func play_hurt_animation() -> void:
 	var anim = get_animasi()
@@ -161,9 +218,9 @@ func play_hurt_animation() -> void:
 	
 	if is_instance_valid(anim):
 		if velocity.length() > 10:
-			anim.play("swim")
+			update_swim_animation()
 		else:
-			anim.play("swim_idle")
+			_play_idle(anim)
 
 func _input(event: InputEvent) -> void:
 	# F key - repair coral, atau collect sampah jika dekat sampah
@@ -195,8 +252,8 @@ func play_repair_animation() -> void:
 		anim.stop()
 		anim.play("repair")
 	else:
-		# Fallback ke swim jika tidak ada animasi repair
-		anim.play("swim")
+		# Fallback jika tidak ada animasi repair
+		update_swim_animation()
 
 func try_repair_coral() -> void:
 	if nearby_coral.size() > 0:

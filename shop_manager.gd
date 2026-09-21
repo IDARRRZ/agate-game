@@ -118,24 +118,30 @@ func _update_upgrade_ui(id: String) -> void:
 		parts.append("%d %s" % [costs[t], TYPE_NAMES.get(t, t)])
 	btn.disabled = false
 	lvl_lbl.text = "%s — Lv %d/%d (%s)" % [info.name, lvl, maxl, info.desc]
-	cost_lbl.text = "Butuh: " + (", ".join(parts) if parts.size() > 0 else "-")
+	var cost_text: String = ", ".join(parts) if parts.size() > 0 else "-"
+	cost_lbl.text = "Biaya: %s  ATAU  50 Koin" % cost_text
 	var afford: bool = GameManager.can_afford(costs) if GameManager.has_method("can_afford") else true
-	cost_lbl.add_theme_color_override("font_color", Color(1,1,1) if afford else Color(0.75,0.75,0.75))
+	cost_lbl.add_theme_color_override("font_color", Color(1, 0.9, 0.3) if afford else Color(0.7, 0.7, 0.7))
 
 func buy_upgrade(id: String) -> void:
 	if GameManager.has_method("purchase_upgrade") and GameManager.purchase_upgrade(id):
 		AudioManager.play_sfx("buy")
-		show_message("%s Lv%d!" % [upgrade_display[id].name, GameManager.get_upgrade_level(id)])
+		show_message("Sukses! %s Lv%d!" % [upgrade_display[id].name, GameManager.get_upgrade_level(id)])
 		update_ui()
 	else:
 		AudioManager.play_sfx("error")
-		show_message("Produk daur ulang tidak cukup!" if GameManager.get_upgrade_level(id) < GameManager.get_upgrade_max_level(id) else upgrade_display[id].name + " MAX!")
+		var is_max := GameManager.get_upgrade_level(id) >= GameManager.get_upgrade_max_level(id)
+		show_message(upgrade_display[id].name + " SUDAH MAKSIMAL!" if is_max else "Koin atau Produk Daur Ulang tidak cukup!")
 
 var _player_ref_cache = null
 
 func _unhandled_input(event: InputEvent) -> void:
 	var is_b = event.is_action_pressed("interact_shop") or (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_B)
 	if not is_b:
+		return
+	# Hanya bisa buka shop saat di darat (dunia.tscn)
+	var current_scene = get_tree().current_scene
+	if current_scene and current_scene.name != "Dunia" and not current_scene.name.begins_with("dunia"):
 		return
 	toggle_shop()
 	get_viewport().set_input_as_handled()

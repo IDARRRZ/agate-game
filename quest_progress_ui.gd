@@ -14,6 +14,11 @@ func _ready() -> void:
 
 	# Start hidden
 	visible = false
+	if counter_label:
+		counter_label.add_theme_font_size_override("font_size", 15)
+		counter_label.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
+		counter_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		counter_label.add_theme_constant_override("outline_size", 4)
 	print("[QuestUI] Ready, starting hidden")
 
 func _connect_signals() -> void:
@@ -25,6 +30,7 @@ func _connect_signals() -> void:
 		GameManager.quest_failed_signal.connect(_on_quest_failed)
 		GameManager.timer_updated.connect(_on_timer_updated)
 		GameManager.marina_quest_progress_changed.connect(_on_marina_progress)
+		GameManager.zone_progress_changed.connect(_on_zone_progress_changed)
 		print("[QuestUI] Signals connected!")
 	else:
 		print("[QuestUI] ERROR: GameManager not found!")
@@ -59,6 +65,23 @@ func _on_quest_failed() -> void:
 	await get_tree().create_timer(2.0).timeout
 	visible = false
 	current_mode = QuestMode.NONE
+
+func _on_zone_progress_changed() -> void:
+	if current_mode == QuestMode.TINA:
+		return
+	if GameManager.is_all_zones_clean():
+		visible = true
+		if counter_label:
+			counter_label.text = "🏆 SELURUH LAUT 100% PULIH! Bicaralah dengan Tina [E]!"
+			counter_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.2))
+	elif GameManager.marina_quest_completed:
+		visible = true
+		if counter_label:
+			var active_z := GameManager.get_current_healing_zone()
+			var z_name := GameManager.get_zone_display_name(active_z)
+			var z_pct := GameManager.get_zone_clean_percent(active_z)
+			counter_label.text = "🌊 %s: %.0f%% (Target 100%%)" % [z_name, z_pct]
+			counter_label.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
 
 func _on_marina_progress(_collected: int, _target: int, _sort_correct: int, _sort_target: int) -> void:
 	# Hanya tampilkan UI kalau Tina quest tidak aktif

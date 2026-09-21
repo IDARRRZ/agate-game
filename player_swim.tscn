@@ -256,10 +256,8 @@ process_callback = 0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=775629861]
 position = Vector2(3, -2)
-rotation = 0.0250943
-scale = Vector2(1.01102, 1)
 sprite_frames = SubResource("SpriteFrames_i7ocn")
-animation = &"hurt_swim_up"
+animation = &"idle_swim"
 
 [node name="Oxygen" parent="." unique_id=326883440 instance=ExtResource("7_rbqtj")]
 position = Vector2(-312, -240)

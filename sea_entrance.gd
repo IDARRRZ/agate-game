@@ -4,7 +4,7 @@ extends Area2D
 # Bisa berfungsi sebagai "advance zone" jika player unlock zone berikutnya.
 
 @export var target_scene: String = "res://bawah_laut.tscn"
-@export var enter_zone: String = "beach"   # zone yang dituju saat masuk
+@export var enter_zone: String = "coral_reef"   # zone yang dituju saat masuk
 @export var is_advance_portal: bool = false # true = portal untuk advance ke zone berikutnya
 
 var player_in_area: bool = false

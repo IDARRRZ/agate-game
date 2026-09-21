@@ -94,31 +94,27 @@ var marina_quest_collected: int = 0
 var marina_quest_sort_correct: int = 0
 var marina_quest_sort_target: int = 3
 
-# === 4 ZONE SYSTEM (Phase F1) ===
-# GDD BAB 6.A: Beach → Coral Reef → Open Ocean → Deep Sea
-# Unlock: coral_reef butuh beach 25% clean; open_ocean butuh coral_reef 100%; deep_sea butuh open_ocean 100%
-const ZONE_ORDER := ["beach", "coral_reef", "open_ocean", "deep_sea"]
+# === 3 OCEAN ZONE SYSTEM (Dermaga → Laut) ===
+# Coral Reef (Free dari awal, area Marina) → Open Ocean (100% clean) → Deep Sea (100% clean)
+const ZONE_ORDER := ["coral_reef", "open_ocean", "deep_sea"]
 const ZONE_UNLOCK_REQ := {
-	"beach": 0.0,
-	"coral_reef": 0.25,   # unlock setelah Beach 25% clean
+	"coral_reef": 0.0,    # unlock / free dari awal
 	"open_ocean": 1.0,    # unlock setelah Coral Reef 100% clean
 	"deep_sea": 1.0,      # unlock setelah Open Ocean 100% clean
 }
 const ZONE_O2_DRAIN := {
-	"beach": 1.0,
-	"coral_reef": 1.2,
+	"coral_reef": 1.0,
 	"open_ocean": 1.5,
 	"deep_sea": 2.0,
 }
-const CLEAN_PER_SORT := 2.0   # setiap sort benar = +2% zone clean
+const CLEAN_PER_SORT := 10.0   # setiap sort benar = +10% zone clean (10 sort benar = 1 zone 100% clean)
 
 var zone_progress := {
-	"beach": 0.0,
 	"coral_reef": 0.0,
 	"open_ocean": 0.0,
 	"deep_sea": 0.0,
 }
-var current_zone: String = "beach"
+var current_zone: String = "coral_reef"
 
 func get_carried_count() -> int:
 	return carried_trash["plastik"] + carried_trash["logam"] + carried_trash["organik"]
@@ -157,8 +153,8 @@ func sort_trash(trash_type: String, bin_type: String) -> bool:
 			recycled_material[bin_type] += 1
 		AirQuality.on_sort_correct()
 		AudioManager.play_sfx("success")
-		# Sort benar di zone aktif → naikkan progress zone
-		add_zone_clean(current_zone, CLEAN_PER_SORT)
+		# Sort benar → naikkan progress pemulihan laut secara sekuensial
+		add_sequential_clean(CLEAN_PER_SORT)
 		# Trigger quest progress Marina (jika quest aktif)
 		register_marina_sort(true)
 		print("[GameManager] Sort BENAR: ", trash_type, " | material: ", recycled_material[bin_type])
@@ -217,19 +213,32 @@ func get_next_upgrade_costs(id: String) -> Dictionary:
 		return {}
 	return UPGRADE_COSTS[id][level]
 
+const COIN_UPGRADE_PRICE := 50
+
 func can_afford(costs: Dictionary) -> bool:
+	var has_prod := true
 	for type in costs:
 		if not finished_products.has(type) or finished_products[type] < costs[type]:
-			return false
-	return true
+			has_prod = false
+			break
+	if has_prod:
+		return true
+	return coins >= COIN_UPGRADE_PRICE
 
 func pay_costs(costs: Dictionary) -> bool:
-	if not can_afford(costs):
-		return false
+	var has_prod := true
 	for type in costs:
-		finished_products[type] -= costs[type]
-	recycled_material_changed.emit()
-	return true
+		if not finished_products.has(type) or finished_products[type] < costs[type]:
+			has_prod = false
+			break
+	if has_prod:
+		for type in costs:
+			finished_products[type] -= costs[type]
+		recycled_material_changed.emit()
+		return true
+	if coins >= COIN_UPGRADE_PRICE:
+		return spend_coins(COIN_UPGRADE_PRICE)
+	return false
 
 func purchase_upgrade(id: String) -> bool:
 	var level := get_upgrade_level(id)
@@ -266,20 +275,51 @@ func add_zone_clean(zone: String, pct: float) -> void:
 	zone_progress_changed.emit()
 	print("[GameManager] Zone ", zone, " cleanliness: ", zone_progress[zone], "%")
 
+func add_sequential_clean(pct: float) -> Dictionary:
+	var target_zone: String = get_current_healing_zone()
+	if target_zone == "":
+		return {"zone": "deep_sea", "pct": 100.0, "completed": false, "all_clean": true}
+	
+	var old_val: float = zone_progress[target_zone]
+	zone_progress[target_zone] = clampf(zone_progress[target_zone] + pct, 0.0, 100.0)
+	zone_progress_changed.emit()
+	var is_completed: bool = (old_val < 100.0 and zone_progress[target_zone] >= 100.0)
+	var all_clean: bool = is_all_zones_clean()
+	
+	print("[GameManager] Sequential clean: ", target_zone, " -> ", zone_progress[target_zone], "%")
+	return {
+		"zone": target_zone,
+		"pct": zone_progress[target_zone],
+		"completed": is_completed,
+		"all_clean": all_clean
+	}
+
+func get_current_healing_zone() -> String:
+	for z in ZONE_ORDER:
+		if zone_progress[z] < 100.0:
+			return z
+	return ""
+
+func get_zone_display_name(zone: String) -> String:
+	match zone:
+		"coral_reef": return "Terumbu Karang"
+		"open_ocean": return "Samudra Lepas"
+		"deep_sea": return "Palung Laut"
+		_: return zone.capitalize()
+
 func get_zone_o2_drain(zone: String) -> float:
 	return ZONE_O2_DRAIN.get(zone, 1.0)
 
 func is_zone_unlocked(zone: String) -> bool:
 	if not ZONE_UNLOCK_REQ.has(zone):
 		return false
-	var req: float = ZONE_UNLOCK_REQ[zone]
-	# Beach selalu free; zona lain butuh requirement pada zona SEBELUMNYA
-	if zone == "beach":
+	var req: float = float(ZONE_UNLOCK_REQ[zone])
+	if zone == "coral_reef" or req <= 0.0:
 		return true
 	var prev_idx := ZONE_ORDER.find(zone) - 1
 	if prev_idx < 0:
 		return false
-	var prev_zone: String = ZONE_ORDER[prev_idx]
+	var prev_zone: String = str(ZONE_ORDER[prev_idx])
 	return zone_progress[prev_zone] >= (req * 100.0)
 
 func is_all_zones_clean() -> bool:
@@ -555,8 +595,8 @@ func reset_for_respawn() -> void:
 	bag_capacity = BAG_BASE
 	coins = 0
 	score = 0
-	zone_progress = {"beach": 0.0, "coral_reef": 0.0, "open_ocean": 0.0, "deep_sea": 0.0}
-	current_zone = "beach"
+	zone_progress = {"coral_reef": 0.0, "open_ocean": 0.0, "deep_sea": 0.0}
+	current_zone = "coral_reef"
 	coral_repaired = false
 	marina_met = false
 	marina_quest_active = false

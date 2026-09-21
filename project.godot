@@ -29,7 +29,7 @@ DialogueManager="*res://addons/dialogue_manager/dialogue_manager.gd"
 GameManager="*res://gamemanager.gd"
 AudioManager="*uid://0181fvn5aigb"
 AirQuality="*res://air_quality.tscn"
-InteractionManager="*res://interaction_manager.gd"
+DayCycleManager="*res://day_cycle_manager.gd"
 
 [dialogue_manager]
 

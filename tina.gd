@@ -11,6 +11,8 @@ var is_chatting = false
 
 var player
 var player_in_chat_zone = false
+var _ending_triggered: bool = false
+var _showing_poem: bool = false
 
 @export var dialogue_resource: DialogueResource
 @export var dialogue_start: String = "start"
@@ -99,12 +101,21 @@ func _on_dialogue_ended(_resource):
 	print("Tina dialogue ended")
 	is_chatting = false
 
-	if GameManager.is_all_zones_clean():
-		print("[Tina] Ending triggered! Menampilkan puisi lalu simpan & quit.")
-		var trigger = get_node_or_null("/root/Dunia/NarrationTrigger")
-		if trigger:
-			await trigger.show_ending()
+	if _showing_poem:
+		_showing_poem = false
+		print("[Tina] Puisi selesai dibaca! Menyimpan file dan keluar.")
 		GameManager.save_poem_to_txt()
+		return
+
+	if GameManager.is_all_zones_clean() and not _ending_triggered:
+		_ending_triggered = true
+		_showing_poem = true
+		print("[Tina] Ending triggered! Menampilkan puisi...")
+		var trigger = get_tree().root.find_child("NarrationTrigger", true, false)
+		if trigger and trigger.has_method("show_ending"):
+			trigger.show_ending()
+		else:
+			GameManager.save_poem_to_txt()
 
 func _on_chat_detection_area_body_entered(body: Node2D) -> void:
 	print("Body entered Tina zone: ", body.name)
